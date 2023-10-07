@@ -13,7 +13,7 @@ public class Main {
      * as the second argument.
      */
     public static void main(String[] args) throws IOException {
-        ChessBoard board = new ChestBoardImpl();
+        ChessBoard board = new ChessBoardImpl();
         board.resetBoard();
         System.out.println(board);
     }
