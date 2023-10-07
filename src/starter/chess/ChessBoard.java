@@ -20,6 +20,19 @@ public interface ChessBoard {
     ChessPiece getPiece(ChessPosition position);
 
     /**
+     * Gets the position of a king
+     * @param teamColor The color of the king
+     * @return Either position of the king, or null if there is no king of that team
+     */
+    ChessPosition findKing(ChessGame.TeamColor teamColor);
+
+    /**
+     * Moves a chess piece on the chessboard
+     * @param move The move to make
+     */
+    void movePiece(ChessMove move);
+
+    /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
      */

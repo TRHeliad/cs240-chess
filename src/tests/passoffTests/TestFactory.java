@@ -11,7 +11,7 @@ public class TestFactory {
     //Chess Functions
     //------------------------------------------------------------------------------------------------------------------
     public static ChessBoard getNewBoard(){
-		return new ChestBoardImpl();
+		return new ChessBoardImpl();
     }
 
     public static ChessGame getNewGame(){

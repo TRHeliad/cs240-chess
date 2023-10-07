@@ -1,11 +1,9 @@
 package chess;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChestBoardImpl implements ChessBoard {
+public class ChessBoardImpl implements ChessBoard {
 
     private static final Map<ChessPiece.PieceType, String> pieceCharacters = new HashMap<>();
     static {
@@ -27,8 +25,47 @@ public class ChestBoardImpl implements ChessBoard {
     }
 
     @Override
+    public void movePiece(ChessMove move) {
+        var fromRowIndex = rowToArrayIndex(move.getStartPosition().getRow());
+        var fromColIndex = columnToArrayIndex(move.getStartPosition().getColumn());
+        var toRowIndex = rowToArrayIndex(move.getEndPosition().getRow());
+        var toColIndex = columnToArrayIndex(move.getEndPosition().getColumn());
+        var movingPiece = boardSpaces[fromRowIndex][fromColIndex];
+        if (movingPiece == null)
+            throw new RuntimeException("Tried to move nothing (empty space)");
+        var teamColor = movingPiece.getTeamColor();
+        if (move.getPromotionPiece() != null) {
+            boardSpaces[toRowIndex][toColIndex] = switch(move.getPromotionPiece()) {
+                case KING -> new King(teamColor);
+                case QUEEN -> new Queen(teamColor);
+                case BISHOP -> new Bishop(teamColor);
+                case KNIGHT -> new Knight(teamColor);
+                case ROOK -> new Rook(teamColor);
+                case PAWN -> new Pawn(teamColor);
+            };
+        }
+        else
+            boardSpaces[toRowIndex][toColIndex] = boardSpaces[fromRowIndex][fromColIndex];
+        boardSpaces[fromRowIndex][fromColIndex] = null;
+    }
+
+    @Override
     public ChessPiece getPiece(ChessPosition position) {
         return boardSpaces[rowToArrayIndex(position.getRow())][columnToArrayIndex(position.getColumn())];
+    }
+
+    @Override
+    public ChessPosition findKing(ChessGame.TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                var position = new ChessPositionImpl(row, col);
+                ChessPiece piece = getPiece(position);
+                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING
+                        && piece.getTeamColor() == teamColor)
+                    return position;
+            }
+        }
+        return null;
     }
 
     private int rowToArrayIndex(int row) {
@@ -80,7 +117,7 @@ public class ChestBoardImpl implements ChessBoard {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (int row = 1; row <= 8; row++) {
+        for (int row = 8; row >= 1; row--) {
             stringBuilder.append('|');
             for (int col = 1; col <= 8; col++) {
                 var piece = getPiece(new ChessPositionImpl(row, col));
