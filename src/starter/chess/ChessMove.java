@@ -19,4 +19,6 @@ public interface ChessMove {
      * @return Type of piece to promote a pawn to, or null if no promotion
      */
     ChessPiece.PieceType getPromotionPiece();
+
+    boolean equals(Object o);
 }

@@ -16,6 +16,5 @@ public interface ChessPosition {
      */
     int getColumn();
 
-    //TODO (1,1) coding for bottom left matches a1, matching chess notation better.
-    // Should we have it code for top left as that would be more straight forward to iterate over?
+    boolean equals(Object o);
 }
