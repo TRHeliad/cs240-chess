@@ -13,7 +13,7 @@ public class ChessBoardImpl implements ChessBoard {
         pieceCharacters.put(ChessPiece.PieceType.KNIGHT, "n");
         pieceCharacters.put(ChessPiece.PieceType.ROOK, "r");
         pieceCharacters.put(ChessPiece.PieceType.PAWN, "p");
-    };
+    }
 
     private final ChessPiece[][] boardSpaces = new ChessPieceImpl[8][8];
 
