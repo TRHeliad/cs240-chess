@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"dataAccess"},{"l":"model"},{"l":"service"},{"l":"webRequest"},{"l":"webResult"}];updateSearchResults();
