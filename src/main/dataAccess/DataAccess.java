@@ -19,10 +19,10 @@ public interface DataAccess {
     void createUser(User user) throws DataAccessException;
 
     /**
-     * @return the users in the database
+     * @return the user with the given username
      * @throws DataAccessException when data access fails
      */
-    Collection<User> getUsers() throws DataAccessException;
+    User getUser(String username) throws DataAccessException;
 
     /**
      * Remove the entry for the given user from the database
@@ -39,17 +39,17 @@ public interface DataAccess {
     void createAuthToken(AuthToken authToken) throws DataAccessException;
 
     /**
-     * @return the authTokens in the database
+     * @return authToken object corresponding to the token
      * @throws DataAccessException when data access fails
      */
-    Collection<AuthToken> getAuthTokens() throws DataAccessException;
+    AuthToken getAuthToken(String authToken) throws DataAccessException;
 
     /**
      * Remove the entry for the given authToken from the database
      * @param authToken The authToken to remove
      * @throws DataAccessException when data access fails
      */
-    void destroyAuth(AuthToken authToken) throws DataAccessException;
+    void destroyAuth(String authToken) throws DataAccessException;
 
     /**
      * Adds an entry with the game in the database
@@ -59,10 +59,24 @@ public interface DataAccess {
     void createGame(Game game) throws DataAccessException;
 
     /**
+     * Updates the entry with the same gameID in the database
+     * @param game The game to update
+     * @throws DataAccessException when data access fails
+     */
+    void updateGame(Game game) throws DataAccessException;
+
+    /**
      * @return the games in the database
      * @throws DataAccessException when data access fails
      */
     Collection<Game> getGames() throws DataAccessException;
+
+    /**
+     * @return a game from the database
+     * @param gameID ID of the game to get
+     * @throws DataAccessException when data access fails
+     */
+    Game getGame(Integer gameID) throws DataAccessException;
 
     /**
      * Joins the user to the specified game
