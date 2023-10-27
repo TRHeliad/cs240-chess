@@ -1,6 +1,12 @@
 package passoffTests;
 
 import chess.*;
+import dataAccess.DataAccess;
+import dataAccess.MemoryDataAccess;
+import model.User;
+import service.ApplicationService;
+import service.GameService;
+import service.UserService;
 
 /**
  * Used for testing your code
@@ -43,6 +49,13 @@ public class TestFactory {
     //------------------------------------------------------------------------------------------------------------------
     public static String getServerPort(){
         return "8080";
+    }
+    public static UserService getUserService() { return UserService.getInstance(); }
+    public static GameService getGameService() { return GameService.getInstance(); }
+    public static ApplicationService getApplicationService() { return ApplicationService.getInstance(); }
+    public static DataAccess getDataAccess() { return MemoryDataAccess.getInstance(); }
+    public static User createSimpleUser() {
+        return new User("jeff", "abc123", "jeff@gmail.com");
     }
     //------------------------------------------------------------------------------------------------------------------
 

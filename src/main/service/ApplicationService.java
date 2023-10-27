@@ -1,16 +1,38 @@
 package service;
 
+import dataAccess.DataAccess;
+import dataAccess.DataAccessException;
+import dataAccess.MemoryDataAccess;
 import webResult.ClearResult;
+import webResult.LoginResult;
 
 /**
  * The web service for application requests
  */
 public class ApplicationService {
+
+    private static final ApplicationService applicationService = new ApplicationService();
+
+    public static ApplicationService getInstance() {
+        return applicationService;
+    }
+
+    private DataAccess dataAccess;
+
+    public void init(DataAccess dataAccess) {
+        applicationService.dataAccess = dataAccess;
+    }
+
     /**
      * Clear the application data (users, games, authentication)
      * @return the clear web result
      */
-    ClearResult clearApplication() {
-        return null;
+    public ClearResult clearApplication() {
+        try {
+            dataAccess.clearData();
+            return new ClearResult(null, true);
+        } catch (DataAccessException exception) {
+            return new ClearResult("Error: " + exception.getMessage(), false);
+        }
     }
 }
