@@ -6,4 +6,4 @@ package webResult;
  * @param authToken A new authentication token
  * @param message A potential error message
  */
-public record RegisterResult(String username, String authToken, String message) { }
+public record RegisterResult(String username, String authToken, String message, Boolean success) { }

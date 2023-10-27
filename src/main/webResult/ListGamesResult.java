@@ -7,4 +7,4 @@ import model.Game;
  * @param games The list of games
  * @param message A potential error message
  */
-public record ListGamesResult(Game[] games, String message) {}
+public record ListGamesResult(Game[] games, String message, Boolean success) {}
