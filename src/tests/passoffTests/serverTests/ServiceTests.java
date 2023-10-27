@@ -1,5 +1,6 @@
 package passoffTests.serverTests;
 
+import chess.ChessGame;
 import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
 import model.User;
@@ -8,9 +9,7 @@ import passoffTests.TestFactory;
 import service.ApplicationService;
 import service.GameService;
 import service.UserService;
-import webRequest.LoginRequest;
-import webRequest.LogoutRequest;
-import webRequest.RegisterRequest;
+import webRequest.*;
 
 public class ServiceTests {
     private static final UserService userService = TestFactory.getUserService();
@@ -97,5 +96,94 @@ public class ServiceTests {
 
         Assertions.assertTrue(result.success());
         Assertions.assertNull(result.message());
+    }
+
+    @Test
+    public void createGame() {
+        var user = TestFactory.createSimpleUser();
+        var registerResult = userService.register(new RegisterRequest(user.username(), user.password(), user.email()));
+
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, registerResult.authToken());
+
+        Assertions.assertTrue(createGameResult.success());
+        try {
+            Assertions.assertNotNull(dataAccess.getGame(createGameResult.gameID()));
+        } catch (DataAccessException exception) {
+            Assertions.fail("Exception thrown while reading games");
+        }
+    }
+
+    @Test
+    public void unauthorizedCreateGame() {
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, "");
+
+        Assertions.assertFalse(createGameResult.success());
+        Assertions.assertNull(createGameResult.gameID());
+        Assertions.assertEquals(createGameResult.message(), "Error: unauthorized");
+    }
+
+    @Test
+    public void listGames() {
+        var user = TestFactory.createSimpleUser();
+        var registerResult = userService.register(new RegisterRequest(user.username(), user.password(), user.email()));
+
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, registerResult.authToken());
+
+        var listGamesResult = gameService.listGames(registerResult.authToken());
+        Assertions.assertEquals(listGamesResult.games().length, 1);
+    }
+
+    @Test
+    public void unauthorizedListGames() {
+        var user = TestFactory.createSimpleUser();
+        var registerResult = userService.register(new RegisterRequest(user.username(), user.password(), user.email()));
+
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, registerResult.authToken());
+
+        var listGamesResult = gameService.listGames("");
+
+        Assertions.assertFalse(listGamesResult.success());
+        Assertions.assertNull(listGamesResult.games());
+        Assertions.assertEquals(listGamesResult.message(), "Error: unauthorized");
+    }
+
+    @Test
+    public void joinGame() {
+        var user = TestFactory.createSimpleUser();
+        var registerResult = userService.register(new RegisterRequest(user.username(), user.password(), user.email()));
+
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, registerResult.authToken());
+
+        var joinGameRequest = new JoinGameRequest(ChessGame.TeamColor.WHITE, createGameResult.gameID());
+        var joinGameResult = gameService.joinGame(joinGameRequest, registerResult.authToken());
+
+        Assertions.assertTrue(joinGameResult.success());
+        Assertions.assertNull(joinGameResult.message());
+        try {
+            var game = dataAccess.getGame(createGameResult.gameID());
+            Assertions.assertEquals(game.whiteUsername(), user.username());
+        } catch (DataAccessException exception) {
+            Assertions.fail("Exception thrown while reading games");
+        }
+    }
+
+    @Test
+    public void unauthorizedJoinGame() {
+        var user = TestFactory.createSimpleUser();
+        var registerResult = userService.register(new RegisterRequest(user.username(), user.password(), user.email()));
+
+        var createGameRequest = new CreateGameRequest("gameName");
+        var createGameResult = gameService.createGame(createGameRequest, registerResult.authToken());
+
+        var joinGameRequest = new JoinGameRequest(ChessGame.TeamColor.WHITE, createGameResult.gameID());
+        var joinGameResult = gameService.joinGame(joinGameRequest, "");
+
+        Assertions.assertFalse(joinGameResult.success());
+        Assertions.assertEquals(joinGameResult.message(), "Error: unauthorized");
     }
 }
