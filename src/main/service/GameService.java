@@ -24,10 +24,10 @@ public class GameService {
     public void init(DataAccess dataAccess) {
         gameService.dataAccess = dataAccess;
     }
-    private static int gameCount = 0;
 
     /**
      * Get the saved games
+     * @param authToken Token for authorization
      * @return the list games result
      */
     public ListGamesResult listGames(String authToken) {
@@ -46,16 +46,16 @@ public class GameService {
     /**
      * Create a new game
      * @param request The create game request data
+     * @param authToken Token for authorization
      * @return the game creation result
      */
     public CreateGameResult createGame(CreateGameRequest request, String authToken) {
         try {
             var authTokenObject = dataAccess.getAuthToken(authToken);
             if (authTokenObject != null) {
-                var gameID = ++gameCount;
                 var chessGame = new ChessGameImpl();
-                var game = new Game(gameCount++, null, null, request.gameName(), chessGame);
-                dataAccess.createGame(game);
+                var game = new Game(0, null, null, request.gameName(), chessGame);
+                var gameID = dataAccess.createGame(game);
                 return new CreateGameResult(gameID, null, true);
             } else {
                 return new CreateGameResult(null, "Error: unauthorized", false);
@@ -68,6 +68,7 @@ public class GameService {
     /**
      * Join a user to a game
      * @param request The join game request data
+     * @param authToken Token for authorization
      * @return the join game result
      */
     public JoinGameResult joinGame(JoinGameRequest request, String authToken) {
@@ -76,22 +77,22 @@ public class GameService {
                 return new JoinGameResult("Error: bad request", false);
 
             var authTokenObject = dataAccess.getAuthToken(authToken);
-            if (authTokenObject != null) {
+            if (authTokenObject != null) { // valid token
                 var game = dataAccess.getGame(request.gameID());
                 if (game == null)
                     return new JoinGameResult("Error: bad request", false);
                 else {
-                    String currentPlayer;
+                    String currentPlayerOnTeam;
                     var isObserver = request.playerColor() == null;
                     if (isObserver) {
                         return new JoinGameResult(null, true);
                     } else {
                         var isWhite = request.playerColor() == ChessGame.TeamColor.WHITE;
                         if (isWhite)
-                            currentPlayer = game.whiteUsername();
+                            currentPlayerOnTeam = game.whiteUsername();
                         else
-                            currentPlayer = game.blackUsername();
-                        if (currentPlayer == null) {
+                            currentPlayerOnTeam = game.blackUsername();
+                        if (currentPlayerOnTeam == null) { // team slot in game not taken
                             var username = dataAccess.getAuthToken(authToken).username();
                             dataAccess.updateGame(new Game(
                                     game.gameID(),

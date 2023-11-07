@@ -2,6 +2,7 @@ package server;
 
 import com.google.gson.Gson;
 import dataAccess.MemoryDataAccess;
+import dataAccess.SQLDataAccess;
 import handler.ApplicationHandler;
 import handler.GameHandler;
 import handler.UserHandler;
@@ -18,7 +19,7 @@ public class Server {
     }
 
     private void run() {
-        var dataAccess = new MemoryDataAccess();
+        var dataAccess = new SQLDataAccess();
         // init data
         UserService.getInstance().init(dataAccess);
         GameService.getInstance().init(dataAccess);

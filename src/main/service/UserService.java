@@ -2,7 +2,6 @@ package service;
 
 import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
-import dataAccess.MemoryDataAccess;
 import model.AuthToken;
 import model.User;
 import webRequest.LoginRequest;

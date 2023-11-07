@@ -20,6 +20,8 @@ public class MemoryDataAccess implements DataAccess{
         return memoryDataAccess;
     }
 
+    private static int gameCount = 0;
+
     @Override
     public void createUser(User user) throws DataAccessException {
         if (users.containsKey(user.username()))
@@ -40,7 +42,7 @@ public class MemoryDataAccess implements DataAccess{
     @Override
     public void createAuthToken(AuthToken authToken) throws DataAccessException {
         if (users.containsKey(authToken.authToken()))
-            throw new DataAccessException("description");
+            throw new DataAccessException("Token taken");
         authTokens.put(authToken.authToken(), authToken);
     }
 
@@ -55,10 +57,18 @@ public class MemoryDataAccess implements DataAccess{
     }
 
     @Override
-    public void createGame(Game game) throws DataAccessException {
+    public int createGame(Game game) throws DataAccessException {
         if (games.containsKey(game.gameID()))
             throw new DataAccessException("gameID already taken");
-        games.put(game.gameID(), game);
+        var gameID = ++gameCount;
+        games.put(gameID, new Game(
+                gameID,
+                game.whiteUsername(),
+                game.blackUsername(),
+                game.gameName(),
+                game.game()
+        ));
+        return gameID;
     }
 
     @Override

@@ -56,7 +56,7 @@ public interface DataAccess {
      * @param game The game to add
      * @throws DataAccessException when data access fails
      */
-    void createGame(Game game) throws DataAccessException;
+    int createGame(Game game) throws DataAccessException;
 
     /**
      * Updates the entry with the same gameID in the database
