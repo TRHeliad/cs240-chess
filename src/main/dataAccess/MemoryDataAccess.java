@@ -57,7 +57,7 @@ public class MemoryDataAccess implements DataAccess{
     }
 
     @Override
-    public int createGame(Game game) throws DataAccessException {
+    public Integer createGame(Game game) throws DataAccessException {
         if (games.containsKey(game.gameID()))
             throw new DataAccessException("gameID already taken");
         var gameID = ++gameCount;
@@ -104,8 +104,8 @@ public class MemoryDataAccess implements DataAccess{
     }
 
     @Override
-    public void destroyGame(Game game) throws DataAccessException {
-        games.remove(game.gameID());
+    public void destroyGame(Integer gameID) throws DataAccessException {
+        games.remove(gameID);
     }
 
     @Override

@@ -99,6 +99,8 @@ public class SQLDataAccess implements DataAccess{
 
     @Override
     public void destroyUser(User user) throws DataAccessException {
+        if (user.username() == null)
+            throw new DataAccessException("Username was null");
         try(var connection = database.getConnection()) {
             var preparedStatement = connection.prepareStatement("DELETE FROM user WHERE username=?");
             preparedStatement.setString(1, user.username());
@@ -110,6 +112,8 @@ public class SQLDataAccess implements DataAccess{
 
     @Override
     public void createAuthToken(AuthToken authToken) throws DataAccessException {
+        if (authToken.username() == null)
+            throw new DataAccessException("Username was null");
         try(var connection = database.getConnection()) {
             var insertString = "INSERT INTO auth_token (token, username) VALUES(?, ?)";
             var insertStatement = connection.prepareStatement(insertString);
@@ -141,6 +145,8 @@ public class SQLDataAccess implements DataAccess{
 
     @Override
     public void destroyAuth(String authToken) throws DataAccessException {
+        if (authToken == null)
+            throw new DataAccessException("authToken was null");
         try(var connection = database.getConnection()) {
             var preparedStatement = connection.prepareStatement("DELETE FROM auth_token WHERE token=?");
             preparedStatement.setString(1, authToken);
@@ -151,7 +157,11 @@ public class SQLDataAccess implements DataAccess{
     }
 
     @Override
-    public int createGame(Game game) throws DataAccessException {
+    public Integer createGame(Game game) throws DataAccessException {
+        if (game.gameName() == null)
+            throw new DataAccessException("gameName was null");
+        if (game.game() == null)
+            throw new DataAccessException("game was null");
         try(var connection = database.getConnection()) {
             var insertString = "INSERT INTO game (white_username, black_username, game_name, chess_game) VALUES(?, ?, ?, ?)";
             var insertStatement = connection.prepareStatement(insertString, Statement.RETURN_GENERATED_KEYS);
@@ -173,9 +183,25 @@ public class SQLDataAccess implements DataAccess{
         }
     }
 
+    private boolean gameExists(int gameID) throws DataAccessException {
+        try(var connection = database.getConnection()) {
+            var preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM game WHERE id=?");
+            preparedStatement.setInt(1, gameID);
+            var rs = preparedStatement.executeQuery();
+            rs.next();
+            var count = rs.getInt(1);
+            return count > 0;
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception.getMessage());
+        }
+    }
+
     @Override
     public void updateGame(Game game) throws DataAccessException {
         try(var connection = database.getConnection()) {
+            if (!gameExists(game.gameID()))
+                throw new DataAccessException("bad request");
+
             var statement = "UPDATE game SET white_username=?, black_username=?, game_name=?, chess_game=? WHERE id=?";
             var preparedStatement = connection.prepareStatement(statement);
 
@@ -205,7 +231,7 @@ public class SQLDataAccess implements DataAccess{
                         rs.getString("white_username"),
                         rs.getString("black_username"),
                         rs.getString("game_name"),
-                        gameSerializer.fromJson(rs.getString("chess_game"), ChessGameImpl.class)
+                        null
                 );
                 games.add(game);
             }
@@ -234,23 +260,19 @@ public class SQLDataAccess implements DataAccess{
         } catch (SQLException exception) {
             throw new DataAccessException(exception.getMessage());
         }
-        return null;
+        throw new DataAccessException("bad request");
     }
 
     @Override
     public void joinGame(User user, ChessGame.TeamColor userColor, Game game) throws DataAccessException {
         try(var connection = database.getConnection()) {
-            var preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM game WHERE id=?");
+            if (!gameExists(game.gameID()))
+                throw new DataAccessException("bad request");
+
+            var preparedStatement = connection.prepareStatement("SELECT * FROM game where id=?");
             preparedStatement.setInt(1, game.gameID());
             var rs = preparedStatement.executeQuery();
             rs.next();
-            var count = rs.getInt(1);
-            if (count > 0)
-                throw new DataAccessException("bad request");
-
-            preparedStatement = connection.prepareStatement("SELECT * FROM game where id=?");
-            preparedStatement.setInt(1, game.gameID());
-            rs = preparedStatement.executeQuery();
 
             var updateString = "UPDATE game SET white_username=?, black_username=?, game_name=?, chess_game=? WHERE id=?";
             var updateStatement = connection.prepareStatement(updateString);
@@ -267,10 +289,12 @@ public class SQLDataAccess implements DataAccess{
     }
 
     @Override
-    public void destroyGame(Game game) throws DataAccessException {
+    public void destroyGame(Integer gameID) throws DataAccessException {
+        if (gameID == null)
+            throw new DataAccessException("gameID was null");
         try(var connection = database.getConnection()) {
             var preparedStatement = connection.prepareStatement("DELETE FROM game WHERE id=?");
-            preparedStatement.setInt(1, game.gameID());
+            preparedStatement.setInt(1, gameID);
             preparedStatement.executeUpdate();
         } catch (SQLException exception) {
             throw new DataAccessException(exception.getMessage());

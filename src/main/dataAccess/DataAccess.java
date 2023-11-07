@@ -56,7 +56,7 @@ public interface DataAccess {
      * @param game The game to add
      * @throws DataAccessException when data access fails
      */
-    int createGame(Game game) throws DataAccessException;
+    Integer createGame(Game game) throws DataAccessException;
 
     /**
      * Updates the entry with the same gameID in the database
@@ -92,7 +92,7 @@ public interface DataAccess {
      * @param game The game to remove
      * @throws DataAccessException when data access fails
      */
-    void destroyGame(Game game) throws DataAccessException;
+    void destroyGame(Integer gameID) throws DataAccessException;
 
     /**
      * Clears all user, authentication, and game data from the database

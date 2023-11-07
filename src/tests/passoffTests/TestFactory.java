@@ -4,6 +4,8 @@ import chess.*;
 import dataAccess.DataAccess;
 import dataAccess.MemoryDataAccess;
 import dataAccess.SQLDataAccess;
+import model.AuthToken;
+import model.Game;
 import model.User;
 import service.ApplicationService;
 import service.GameService;
@@ -60,6 +62,16 @@ public class TestFactory {
     }
     //------------------------------------------------------------------------------------------------------------------
 
+    //Server Database
+    //------------------------------------------------------------------------------------------------------------------
+    public static Game createSimpleGame() {
+        return new Game(0, "jeff", "max", "testGame", getNewGame());
+    }
+    public static AuthToken createSimpleAuthToken() {
+        var user = createSimpleUser();
+        return new AuthToken("testToken", user.username());
+    }
+    //------------------------------------------------------------------------------------------------------------------
 
     //Websocket Tests
     //------------------------------------------------------------------------------------------------------------------
