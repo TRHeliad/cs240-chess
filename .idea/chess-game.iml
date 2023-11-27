@@ -25,5 +25,6 @@
     </orderEntry>
     <orderEntry type="library" name="mysql.connector.java" level="project" />
     <orderEntry type="library" name="danilopianini.gson.extras" level="project" />
+    <orderEntry type="module" module-name="shared" />
   </component>
 </module>

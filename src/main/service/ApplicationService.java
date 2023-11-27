@@ -2,9 +2,7 @@ package service;
 
 import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
-import dataAccess.MemoryDataAccess;
 import webResult.ClearResult;
-import webResult.LoginResult;
 
 /**
  * The web service for application requests

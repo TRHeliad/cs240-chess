@@ -10,7 +10,6 @@ import webRequest.JoinGameRequest;
 import webResult.CreateGameResult;
 import webResult.JoinGameResult;
 import webResult.ListGamesResult;
-import webResult.LogoutResult;
 
 /**
  * The web service for game requests

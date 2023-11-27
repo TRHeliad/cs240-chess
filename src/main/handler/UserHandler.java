@@ -1,11 +1,9 @@
 package handler;
 
 import com.google.gson.Gson;
-import dataAccess.DataAccessException;
 import service.UserService;
 import spark.*;
 import webRequest.LoginRequest;
-import webRequest.LogoutRequest;
 import webRequest.RegisterRequest;
 
 public class UserHandler {

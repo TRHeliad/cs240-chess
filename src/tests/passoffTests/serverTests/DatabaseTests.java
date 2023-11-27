@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import passoffTests.TestFactory;
-import spark.utils.Assert;
 
 public class DatabaseTests {
     private static final DataAccess dataAccess = TestFactory.getDataAccess();

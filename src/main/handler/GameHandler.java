@@ -6,7 +6,6 @@ import spark.Request;
 import spark.Response;
 import webRequest.CreateGameRequest;
 import webRequest.JoinGameRequest;
-import webRequest.RegisterRequest;
 
 public class GameHandler {
 

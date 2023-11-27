@@ -5,7 +5,6 @@ import model.AuthToken;
 import model.Game;
 import model.User;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 

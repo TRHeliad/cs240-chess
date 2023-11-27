@@ -3,7 +3,6 @@ package passoffTests.serverTests;
 import chess.ChessGame;
 import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
-import model.User;
 import org.junit.jupiter.api.*;
 import passoffTests.TestFactory;
 import service.ApplicationService;

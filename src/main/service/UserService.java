@@ -5,13 +5,11 @@ import dataAccess.DataAccessException;
 import model.AuthToken;
 import model.User;
 import webRequest.LoginRequest;
-import webRequest.LogoutRequest;
 import webRequest.RegisterRequest;
 import webResult.LoginResult;
 import webResult.LogoutResult;
 import webResult.RegisterResult;
 
-import java.awt.image.renderable.RenderableImage;
 import java.util.UUID;
 
 
