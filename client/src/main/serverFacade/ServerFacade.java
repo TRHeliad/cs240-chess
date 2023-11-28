@@ -1,5 +1,6 @@
 package serverFacade;
 
+import chess.ChessGameImpl;
 import com.google.gson.Gson;
 import webRequest.*;
 import webResult.*;
@@ -13,6 +14,7 @@ public class ServerFacade {
     private String address;
     private String port;
     private int responseCode;
+    private static Gson gameAdapter = ChessGameImpl.getGsonAdapter();
 
     public ServerFacade(String address, String port) {
         this.address = address;
@@ -21,19 +23,22 @@ public class ServerFacade {
 
     public int getStatusCode() { return responseCode; }
 
+    public ClearResult clear() {
+        try {
+            var http = createURLConnection("/db", "DELETE", null, null);
+            http.connect();
+            return readResponse(http, ClearResult.class);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        return null;
+    }
+
     public RegisterResult register(RegisterRequest request) {
         try {
             var http = createURLConnection("/user", "POST", request, null);
-
             http.connect();
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, RegisterResult.class);
-                }
-            }
+            return readResponse(http, RegisterResult.class);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -43,16 +48,8 @@ public class ServerFacade {
     public LoginResult login(LoginRequest request) {
         try {
             var http = createURLConnection("/session", "POST", request, null);
-
             http.connect();
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, LoginResult.class);
-                }
-            }
+            return readResponse(http, LoginResult.class);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -62,16 +59,8 @@ public class ServerFacade {
     public LogoutResult logout(LogoutRequest request) {
         try {
             var http = createURLConnection("/session", "DELETE", null, request.authToken());
-
             http.connect();
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, LogoutResult.class);
-                }
-            }
+            return readResponse(http, LogoutResult.class);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -81,16 +70,8 @@ public class ServerFacade {
     public ListGamesResult listGames(String authToken) {
         try {
             var http = createURLConnection("/game", "GET", null, authToken);
-
             http.connect();
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, ListGamesResult.class);
-                }
-            }
+            return readResponse(http, ListGamesResult.class);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -100,16 +81,8 @@ public class ServerFacade {
     public CreateGameResult createGame(CreateGameRequest request, String authToken) {
         try {
             var http = createURLConnection("/game", "POST", request, authToken);
-
             http.connect();
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, CreateGameResult.class);
-                }
-            }
+            return readResponse(http, CreateGameResult.class);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -119,14 +92,19 @@ public class ServerFacade {
     public JoinGameResult joinGame(JoinGameRequest request, String authToken) {
         try {
             var http = createURLConnection("/game", "PUT", request, authToken);
-
             http.connect();
+
             responseCode = http.getResponseCode();
 
             if (responseCode == 200) {
                 try (InputStream respBody = http.getInputStream()) {
                     InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return new Gson().fromJson(inputStreamReader, JoinGameResult.class);
+                    return gameAdapter.fromJson(inputStreamReader, JoinGameResult.class);
+                }
+            } else {
+                try (InputStream respBody = http.getErrorStream()) {
+                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
+                    return gameAdapter.fromJson(inputStreamReader, JoinGameResult.class);
                 }
             }
         } catch (Exception exception) {
@@ -154,6 +132,22 @@ public class ServerFacade {
         }
 
         return http;
+    }
+
+    private <T> T readResponse(HttpURLConnection http, Class<T> resultClass) throws Exception {
+        responseCode = http.getResponseCode();
+
+        if (responseCode == 200) {
+            try (InputStream respBody = http.getInputStream()) {
+                InputStreamReader inputStreamReader = new InputStreamReader(respBody);
+                return new Gson().fromJson(inputStreamReader, resultClass);
+            }
+        } else {
+            try (InputStream respBody = http.getErrorStream()) {
+                InputStreamReader inputStreamReader = new InputStreamReader(respBody);
+                return new Gson().fromJson(inputStreamReader, resultClass);
+            }
+        }
     }
 
 }

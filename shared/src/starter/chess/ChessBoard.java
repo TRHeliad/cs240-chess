@@ -37,4 +37,10 @@ public interface ChessBoard {
      * (How the game of chess normally starts)
      */
     void resetBoard();
+
+    /**
+     * Returns a string representation of the board
+     * @param isWhitePerspective the perspective to display
+     */
+    public String boardToString(boolean isWhitePerspective);
 }

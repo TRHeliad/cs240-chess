@@ -1,5 +1,6 @@
 package handler;
 
+import chess.ChessGameImpl;
 import com.google.gson.Gson;
 import service.GameService;
 import spark.Request;
@@ -10,6 +11,8 @@ import webRequest.JoinGameRequest;
 public class GameHandler {
 
     private static final GameHandler gameHandler = new GameHandler();
+
+    private static Gson gameAdapter = ChessGameImpl.getGsonAdapter();
 
     public static GameHandler getInstance() {
         return gameHandler;
@@ -44,6 +47,6 @@ public class GameHandler {
             else if (joinGameResult.message().equals("Error: already taken"))
                 response.status(403);
         }
-        return new Gson().toJson(joinGameResult);
+        return gameAdapter.toJson(joinGameResult);
     }
 }

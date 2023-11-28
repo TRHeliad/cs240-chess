@@ -1,6 +1,9 @@
 package client;
 
+import chess.ChessGame;
+import model.Game;
 import serverFacade.ServerFacade;
+import webRequest.*;
 
 import java.util.*;
 
@@ -13,6 +16,8 @@ public class Client {
     ServerFacade serverFacade = new ServerFacade("localhost", "8080");
     private final Map<String, Command> commands = new HashMap<>();
     private boolean clientQuit = false;
+    private String authToken;
+    private Map<Integer, Game> gameList;
 
     public static void main(String[] args) { new Client().run(); }
 
@@ -22,7 +27,8 @@ public class Client {
         var helpCommand = new Command("help - with possible commands") {
             public void run(String[] args) {
                 for (Map.Entry<String, Command> entry : commands.entrySet()) {
-                    System.out.println("\t" + entry.getValue().getHelpText());
+                    if (entry.getValue().currentlyValid(clientContext))
+                        System.out.println("\t" + entry.getValue().getHelpText());
                 }
             }
         };
@@ -33,6 +39,10 @@ public class Client {
         var quitCommand = new Command("quit - playing chess") {
             public void run(String[] args) {
                 clientQuit = true;
+                if (authToken != null) {
+                    var logoutRequest = new LogoutRequest(authToken);
+                    serverFacade.logout(logoutRequest);
+                }
             }
         };
         quitCommand.addValidStatus(ClientContext.POSTLOGIN);
@@ -41,7 +51,14 @@ public class Client {
 
         var registerCommand = new Command("register <USERNAME> <PASSWORD> <EMAIL> - to create account") {
             public void run(String[] args) {
-
+                var registerRequest = new RegisterRequest(args[0], args[1], args[2]);
+                var registerResult = serverFacade.register(registerRequest);
+                if (serverFacade.getStatusCode() == 200) {
+                    authToken = registerResult.authToken();
+                    clientContext = ClientContext.POSTLOGIN;
+                    System.out.println("Logged in as " + registerResult.username());
+                } else
+                    System.out.println(registerResult.message());
             }
         };
         registerCommand.addValidStatus(ClientContext.PRELOGIN);
@@ -49,15 +66,41 @@ public class Client {
 
         var loginCommand = new Command("login <USERNAME> <PASSWORD> - to play chess") {
             public void run(String[] args) {
-
+                var loginRequest = new LoginRequest(args[0], args[1]);
+                var loginResult = serverFacade.login(loginRequest);
+                if (serverFacade.getStatusCode() == 200) {
+                    authToken = loginResult.authToken();
+                    clientContext = ClientContext.POSTLOGIN;
+                    System.out.println("Logged in as " + loginRequest.username());
+                } else
+                    System.out.println(loginResult.message());
             }
         };
         loginCommand.addValidStatus(ClientContext.PRELOGIN);
         commands.put("login", loginCommand);
 
+        var logoutCommand = new Command("logout - of account") {
+            public void run(String[] args) {
+                var logoutRequest = new LogoutRequest(authToken);
+                var logoutResult = serverFacade.logout(logoutRequest);
+                if (serverFacade.getStatusCode() == 200) {
+                    authToken = null;
+                    clientContext = ClientContext.PRELOGIN;
+                } else
+                    System.out.println(logoutResult.message());
+            }
+        };
+        logoutCommand.addValidStatus(ClientContext.POSTLOGIN);
+        commands.put("logout", logoutCommand);
+
         var createGameCommand = new Command("create <NAME> - a chess game") {
             public void run(String[] args) {
-
+                var createGameRequest = new CreateGameRequest(args[0]);
+                var createGameResult = serverFacade.createGame(createGameRequest, authToken);
+                if (serverFacade.getStatusCode() == 200)
+                    System.out.println("Created new game with name: "+ createGameRequest.gameName());
+                else
+                    System.out.println(createGameResult.message());
             }
         };
         createGameCommand.addValidStatus(ClientContext.POSTLOGIN);
@@ -65,32 +108,65 @@ public class Client {
 
         var listGamesCommand = new Command("list - games") {
             public void run(String[] args) {
-
+                var listGamesResult = serverFacade.listGames(authToken);
+                if (serverFacade.getStatusCode() == 200) {
+                    var count = 0;
+                    System.out.println("Number: Name, White Player, Black Player");
+                    gameList = new HashMap<>();
+                    for (Game game : listGamesResult.games()) {
+                        var number = ++count;
+                        gameList.put(number, game);
+                        System.out.print(number + ": " + game.gameName() + ", ");
+                        System.out.println(game.whiteUsername() + ", " + game.blackUsername());
+                    }
+                }
+                else
+                    System.out.println(listGamesResult.message());
             }
         };
         listGamesCommand.addValidStatus(ClientContext.POSTLOGIN);
         commands.put("list", listGamesCommand);
 
-        var joinGameCommand = new Command("join [WHITE|BLACK|<empty>] - a game") {
+        var joinGameCommand = new Command("join <ID> [WHITE|BLACK|<empty>] - a game") {
             public void run(String[] args) {
+                if (gameList == null) {
+                    System.out.println("Use 'list' to get game numbers first");
+                    return;
+                }
 
+                ChessGame.TeamColor teamColor = null;
+                if (args.length > 1) {
+                    if (args[1].equalsIgnoreCase("WHITE"))
+                        teamColor = ChessGame.TeamColor.WHITE;
+                    if (args[1].equalsIgnoreCase("BLACK"))
+                        teamColor = ChessGame.TeamColor.BLACK;
+                }
+
+                var number = Integer.parseInt(args[0]);
+                var game = gameList.get(number);
+                int gameID = -1;
+                if (game != null) {
+                    gameID = game.gameID();
+                } else {
+                    System.out.println("Invalid game number");
+                    return;
+                }
+
+                var joinGameRequest = new JoinGameRequest(teamColor, gameID);
+                var joinGameResult = serverFacade.joinGame(joinGameRequest, authToken);
+
+                if (serverFacade.getStatusCode() == 200) {
+                    System.out.println("Joined game with ID: " + joinGameRequest.gameID());
+                    System.out.println(joinGameResult.game().game().getBoard());
+                    System.out.println(joinGameResult.game().game().getBoard().boardToString(false));
+                } else
+                    System.out.println(joinGameResult.message());
             }
         };
         joinGameCommand.addValidStatus(ClientContext.POSTLOGIN);
         commands.put("join", joinGameCommand);
 
         runRepl();
-
-//        var testRegisterRequest = new RegisterRequest("john", "abc123", "abc@gmail.com");
-//        var result = serverFacade.register(testRegisterRequest);
-//
-//        var createGameRequest = new CreateGameRequest("testGame");
-//        var createGameResult = serverFacade.createGame(createGameRequest, result.authToken());
-//
-//        var createGameRequest2 = new CreateGameRequest("testGame2");
-//        var createGameResult2 = serverFacade.createGame(createGameRequest2, result.authToken());
-//
-//        var listGamesResult = serverFacade.listGames(result.authToken());
     }
 
     private void runRepl() {

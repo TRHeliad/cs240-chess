@@ -21,7 +21,7 @@ public class SQLDataAccess implements DataAccess{
 
     public static SQLDataAccess getInstance() { return sqlDataAccess; }
 
-    private Gson gameSerializer;
+    private static Gson gameAdapter = ChessGameImpl.getGsonAdapter();
 
     public SQLDataAccess() {
         try {
@@ -29,28 +29,6 @@ public class SQLDataAccess implements DataAccess{
         } catch (DataAccessException exception) {
             throw new RuntimeException(exception.getMessage());
         }
-
-        final RuntimeTypeAdapterFactory<ChessGame> gameTypeFactory = RuntimeTypeAdapterFactory
-                .of(ChessGame.class, "type")
-                .registerSubtype(ChessGameImpl.class);
-
-        final RuntimeTypeAdapterFactory<ChessPiece> pieceTypeFactory = RuntimeTypeAdapterFactory
-                .of(ChessPiece.class, "type")
-                .registerSubtype(King.class)
-                .registerSubtype(Knight.class)
-                .registerSubtype(Pawn.class)
-                .registerSubtype(Queen.class)
-                .registerSubtype(Rook.class);
-
-        final RuntimeTypeAdapterFactory<ChessBoard> boardTypeFactory = RuntimeTypeAdapterFactory
-                .of(ChessBoard.class, "type")
-                .registerSubtype(ChessBoardImpl.class);
-
-        GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapterFactory(gameTypeFactory);
-        builder.registerTypeAdapterFactory(pieceTypeFactory);
-        builder.registerTypeAdapterFactory(boardTypeFactory);
-        gameSerializer = builder.create();
     }
 
     public static void main(String[] args) {
@@ -168,7 +146,7 @@ public class SQLDataAccess implements DataAccess{
             insertStatement.setString(1, game.whiteUsername());
             insertStatement.setString(2, game.blackUsername());
             insertStatement.setString(3, game.gameName());
-            var gameJSON = gameSerializer.toJson(game.game());
+            var gameJSON = gameAdapter.toJson(game.game());
             insertStatement.setString(4, gameJSON);
             insertStatement.executeUpdate();
 
@@ -208,7 +186,7 @@ public class SQLDataAccess implements DataAccess{
             preparedStatement.setString(1, game.whiteUsername());
             preparedStatement.setString(2, game.blackUsername());
             preparedStatement.setString(3, game.gameName());
-            var gameJSON = gameSerializer.toJson(game.game());
+            var gameJSON = gameAdapter.toJson(game.game());
             preparedStatement.setString(4, gameJSON);
 
             preparedStatement.setInt(5, game.gameID());
@@ -249,12 +227,13 @@ public class SQLDataAccess implements DataAccess{
             preparedStatement.setInt(1, gameID);
             var rs = preparedStatement.executeQuery();
             if (rs.next()) {
+                var str = rs.getString("chess_game");
                 return new Game(
                         rs.getInt("id"),
                         rs.getString("white_username"),
                         rs.getString("black_username"),
                         rs.getString("game_name"),
-                        gameSerializer.fromJson(rs.getString("chess_game"), ChessGameImpl.class)
+                        gameAdapter.fromJson(rs.getString("chess_game"), ChessGameImpl.class)
                 );
             }
         } catch (SQLException exception) {

@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessBoardImpl;
 import chess.ChessGame;
 import chess.ChessGameImpl;
 import dataAccess.DataAccess;
@@ -53,6 +54,9 @@ public class GameService {
             var authTokenObject = dataAccess.getAuthToken(authToken);
             if (authTokenObject != null) {
                 var chessGame = new ChessGameImpl();
+                var board = new ChessBoardImpl();
+                board.resetBoard();
+                chessGame.setBoard(board);
                 var game = new Game(0, null, null, request.gameName(), chessGame);
                 var gameID = dataAccess.createGame(game);
                 return new CreateGameResult(gameID, null, true);
@@ -73,18 +77,18 @@ public class GameService {
     public JoinGameResult joinGame(JoinGameRequest request, String authToken) {
         try {
             if (request.gameID() == null)
-                return new JoinGameResult("Error: bad request", false);
+                return new JoinGameResult("Error: bad request", false, null);
 
             var authTokenObject = dataAccess.getAuthToken(authToken);
             if (authTokenObject != null) { // valid token
                 var game = dataAccess.getGame(request.gameID());
                 if (game == null)
-                    return new JoinGameResult("Error: bad request", false);
+                    return new JoinGameResult("Error: bad request", false, null);
                 else {
                     String currentPlayerOnTeam;
                     var isObserver = request.playerColor() == null;
                     if (isObserver) {
-                        return new JoinGameResult(null, true);
+                        return new JoinGameResult(null, true, game);
                     } else {
                         var isWhite = request.playerColor() == ChessGame.TeamColor.WHITE;
                         if (isWhite)
@@ -100,16 +104,16 @@ public class GameService {
                                     game.gameName(),
                                     game.game()
                             ));
-                            return new JoinGameResult(null, true);
+                            return new JoinGameResult(null, true, game);
                         } else
-                            return new JoinGameResult("Error: already taken", false);
+                            return new JoinGameResult("Error: already taken", false, null);
                     }
                 }
             } else {
-                return new JoinGameResult("Error: unauthorized", false);
+                return new JoinGameResult("Error: unauthorized", false, null);
             }
         } catch (DataAccessException exception) {
-            return new JoinGameResult("Error: " + exception.getMessage(), false);
+            return new JoinGameResult("Error: " + exception.getMessage(), false, null);
         }
     }
 }

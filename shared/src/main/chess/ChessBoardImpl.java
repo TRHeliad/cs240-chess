@@ -114,10 +114,11 @@ public class ChessBoardImpl implements ChessBoard {
         }
     }
 
-    @Override
-    public String toString() {
+    public String boardToString(boolean isWhitePerspective) {
         StringBuilder stringBuilder = new StringBuilder();
-        for (int row = 8; row >= 1; row--) {
+        var startRow = isWhitePerspective ? 8 : 1;
+        var rowIncrement = isWhitePerspective ? -1 : 1;
+        for (int row = startRow; isWhitePerspective ? (row >= 1) : (row <= 8); row += rowIncrement) {
             stringBuilder.append('|');
             for (int col = 1; col <= 8; col++) {
                 var piece = getPiece(new ChessPositionImpl(row, col));
@@ -134,5 +135,10 @@ public class ChessBoardImpl implements ChessBoard {
             stringBuilder.append('\n');
         }
         return stringBuilder.toString();
+    }
+
+    @Override
+    public String toString() {
+        return boardToString(true);
     }
 }

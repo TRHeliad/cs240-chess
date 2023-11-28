@@ -1,10 +1,43 @@
 package chess;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
+
 import java.util.*;
 
 public class ChessGameImpl implements ChessGame {
     private TeamColor currentTurnColor = TeamColor.WHITE;
     private ChessBoard board;
+
+    private static Gson gameAdapter;
+    static {
+        final RuntimeTypeAdapterFactory<ChessGame> gameTypeFactory = RuntimeTypeAdapterFactory
+                .of(ChessGame.class, "type")
+                .registerSubtype(ChessGameImpl.class);
+
+        final RuntimeTypeAdapterFactory<ChessPiece> pieceTypeFactory = RuntimeTypeAdapterFactory
+                .of(ChessPiece.class, "type")
+                .registerSubtype(King.class, "chess.King")
+                .registerSubtype(Knight.class, "chess.Knight")
+                .registerSubtype(Pawn.class, "chess.Pawn")
+                .registerSubtype(Queen.class, "chess.Queen")
+                .registerSubtype(Rook.class, "chess.Rook")
+                .registerSubtype(Bishop.class, "chess.Bishop");
+
+        final RuntimeTypeAdapterFactory<ChessBoard> boardTypeFactory = RuntimeTypeAdapterFactory
+                .of(ChessBoard.class, "type")
+                .registerSubtype(ChessBoardImpl.class);
+
+        GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapterFactory(gameTypeFactory);
+        //builder.registerTypeAdapterFactory(pieceTypeFactory);
+        builder.registerTypeAdapterFactory(boardTypeFactory);
+        builder.registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter());
+        gameAdapter = builder.create();
+    }
+    public static Gson getGsonAdapter() { return gameAdapter; }
+
     @Override
     public TeamColor getTeamTurn() {
         return currentTurnColor;

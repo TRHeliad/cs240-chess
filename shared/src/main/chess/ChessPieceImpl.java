@@ -4,8 +4,10 @@ import java.util.Collection;
 
 public abstract class ChessPieceImpl implements ChessPiece {
     private final ChessGame.TeamColor teamColor;
+    protected PieceType type;
 
     public ChessPieceImpl(ChessGame.TeamColor color) {
+        type = getPieceType();
         teamColor = color;
     }
 
