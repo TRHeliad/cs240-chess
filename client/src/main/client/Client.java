@@ -1,6 +1,9 @@
 package client;
 
+import chess.ChessBoard;
 import chess.ChessGame;
+import chess.ChessPiece;
+import chess.ChessPositionImpl;
 import model.Game;
 import serverFacade.ServerFacade;
 import webRequest.*;
@@ -12,6 +15,15 @@ enum ClientContext {
     POSTLOGIN
 }
 public class Client {
+    private static final Map<ChessPiece.PieceType, String> pieceCharacters = new HashMap<>();
+    static {
+        pieceCharacters.put(ChessPiece.PieceType.KING, "K");
+        pieceCharacters.put(ChessPiece.PieceType.QUEEN, "Q");
+        pieceCharacters.put(ChessPiece.PieceType.BISHOP, "B");
+        pieceCharacters.put(ChessPiece.PieceType.KNIGHT, "N");
+        pieceCharacters.put(ChessPiece.PieceType.ROOK, "R");
+        pieceCharacters.put(ChessPiece.PieceType.PAWN, "P");
+    }
 
     ServerFacade serverFacade = new ServerFacade("localhost", "8080");
     private final Map<String, Command> commands = new HashMap<>();
@@ -157,8 +169,9 @@ public class Client {
 
                 if (serverFacade.getStatusCode() == 200) {
                     System.out.println("Joined game with ID: " + joinGameRequest.gameID());
-                    System.out.println(joinGameResult.game().game().getBoard());
-                    System.out.println(joinGameResult.game().game().getBoard().boardToString(false));
+                    ChessBoard board = joinGameResult.game().game().getBoard();
+                    System.out.println(createBoardDisplayString(board, true));
+                    System.out.println(createBoardDisplayString(board, false));
                 } else
                     System.out.println(joinGameResult.message());
             }
@@ -186,5 +199,42 @@ public class Client {
                 System.out.println("Invalid command");
             }
         }
+    }
+
+    private String createBoardDisplayString(ChessBoard board, boolean isWhitePerspective) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("\033[30;47;1m");
+        stringBuilder.append("    a  b  c  d  e  f  g  h    \033[0m\n");
+        var startRow = isWhitePerspective ? 8 : 1;
+        var rowIncrement = isWhitePerspective ? -1 : 1;
+        for (int row = startRow; isWhitePerspective ? (row >= 1) : (row <= 8); row += rowIncrement) {
+            stringBuilder.append("\033[30;47;1m");
+            stringBuilder.append(" " + row + " ");
+            for (int col = 1; col <= 8; col++) {
+                if ((col + row) % 2 == 0)
+                    stringBuilder.append("\033[40m");
+                else
+                    stringBuilder.append("\033[107m");
+
+                var piece = board.getPiece(new ChessPositionImpl(row, col));
+                if (piece != null) {
+                    var pieceCharacter = pieceCharacters.get(piece.getPieceType());
+                    if (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
+                        stringBuilder.append("\033[34m");
+                    else
+                        stringBuilder.append("\033[31m");
+                    stringBuilder.append(" " + pieceCharacter + " ");
+                }
+                else
+                    stringBuilder.append("   ");
+            }
+            stringBuilder.append("\033[30;47;1m");
+            stringBuilder.append(" " + row + " ");
+            stringBuilder.append("\033[0m");
+            stringBuilder.append('\n');
+        }
+        stringBuilder.append("\033[30;47;1m");
+        stringBuilder.append("    a  b  c  d  e  f  g  h    \033[0m\n");
+        return stringBuilder.toString();
     }
 }
