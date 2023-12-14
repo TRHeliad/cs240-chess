@@ -8,22 +8,21 @@ import java.util.*;
 
 public class ChessGameImpl implements ChessGame {
     private TeamColor currentTurnColor = TeamColor.WHITE;
-    private ChessBoard board;
+    private ChessBoardImpl board;
 
-    private static Gson gameAdapter;
+    private static final Gson gameAdapter;
     static {
         final RuntimeTypeAdapterFactory<ChessGame> gameTypeFactory = RuntimeTypeAdapterFactory
                 .of(ChessGame.class, "type")
                 .registerSubtype(ChessGameImpl.class);
 
-        final RuntimeTypeAdapterFactory<ChessPiece> pieceTypeFactory = RuntimeTypeAdapterFactory
-                .of(ChessPiece.class, "type")
-                .registerSubtype(King.class, "chess.King")
-                .registerSubtype(Knight.class, "chess.Knight")
-                .registerSubtype(Pawn.class, "chess.Pawn")
-                .registerSubtype(Queen.class, "chess.Queen")
-                .registerSubtype(Rook.class, "chess.Rook")
-                .registerSubtype(Bishop.class, "chess.Bishop");
+        final RuntimeTypeAdapterFactory<ChessPosition> chessPositionFactory = RuntimeTypeAdapterFactory
+                .of(ChessPosition.class, "type")
+                .registerSubtype(ChessPositionImpl.class);
+
+        final RuntimeTypeAdapterFactory<ChessMove> chessMoveFactory = RuntimeTypeAdapterFactory
+                .of(ChessMove.class, "type")
+                .registerSubtype(ChessMoveImpl.class);
 
         final RuntimeTypeAdapterFactory<ChessBoard> boardTypeFactory = RuntimeTypeAdapterFactory
                 .of(ChessBoard.class, "type")
@@ -31,7 +30,8 @@ public class ChessGameImpl implements ChessGame {
 
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapterFactory(gameTypeFactory);
-        //builder.registerTypeAdapterFactory(pieceTypeFactory);
+        builder.registerTypeAdapterFactory(chessPositionFactory);
+        builder.registerTypeAdapterFactory(chessMoveFactory);
         builder.registerTypeAdapterFactory(boardTypeFactory);
         builder.registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter());
         gameAdapter = builder.create();
@@ -57,7 +57,7 @@ public class ChessGameImpl implements ChessGame {
             for (ChessMove move : pieceMoves) {
                 // Make hypothetical move
                 var takenPiece = board.getPiece(move.getEndPosition());
-                board.movePiece(move);
+                ((ChessBoardImpl)board).movePiece(move);
 
                 var nowInCheck = isInCheck(piece.getTeamColor());
 
@@ -173,7 +173,7 @@ public class ChessGameImpl implements ChessGame {
 
     @Override
     public void setBoard(ChessBoard board) {
-        this.board = board;
+        this.board = (ChessBoardImpl) board;
     }
 
     @Override

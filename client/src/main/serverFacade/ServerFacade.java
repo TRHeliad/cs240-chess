@@ -1,9 +1,13 @@
 package serverFacade;
 
+import chess.ChessGame;
 import chess.ChessGameImpl;
+import chess.ChessMove;
 import com.google.gson.Gson;
+import model.User;
 import webRequest.*;
 import webResult.*;
+import webSocketMessages.userCommands.UserGameCommand;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,143 +15,80 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 
 public class ServerFacade {
-    private String address;
-    private String port;
-    private int responseCode;
-    private static Gson gameAdapter = ChessGameImpl.getGsonAdapter();
+    private final String address;
+    private final String port;
+    private static final Gson gameAdapter = ChessGameImpl.getGsonAdapter();
+    private final HttpCommunicator httpCommunicator;
+    private WebsocketCommunicator websocketCommunicator;
+    private final ServerMessageObserver serverMessageObserver;
 
-    public ServerFacade(String address, String port) {
+    public ServerFacade(String address, String port, ServerMessageObserver serverMessageObserver) {
         this.address = address;
         this.port = port;
+        this.serverMessageObserver = serverMessageObserver;
+        httpCommunicator = new HttpCommunicator(address, port);
     }
 
-    public int getStatusCode() { return responseCode; }
+    public int getStatusCode() { return httpCommunicator.getStatusCode(); }
 
-    public ClearResult clear() {
-        try {
-            var http = createURLConnection("/db", "DELETE", null, null);
-            http.connect();
-            return readResponse(http, ClearResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
+    public ClearResult clear() throws Exception { return httpCommunicator.clear(); }
+
+    public RegisterResult register(RegisterRequest request) throws Exception { return httpCommunicator.register(request); }
+
+    public LoginResult login(LoginRequest request) throws Exception { return httpCommunicator.login(request); }
+
+    public LogoutResult logout(LogoutRequest request) throws Exception { return httpCommunicator.logout(request); }
+
+    public ListGamesResult listGames(String authToken) throws Exception { return httpCommunicator.listGames(authToken); }
+
+    public CreateGameResult createGame(CreateGameRequest request, String authToken) throws Exception {
+        return httpCommunicator.createGame(request, authToken);
+    }
+    public JoinGameResult joinGame(JoinGameRequest request, String authToken) throws Exception {
+        JoinGameResult joinResult = httpCommunicator.joinGame(request, authToken);
+        if (getStatusCode() == 200) {
+            websocketCommunicator = new WebsocketCommunicator(address, port, serverMessageObserver);
+            UserGameCommand.CommandType joinType = request.playerColor() == null ? UserGameCommand.CommandType.JOIN_OBSERVER
+                    : UserGameCommand.CommandType.JOIN_PLAYER;
+            var command = new UserGameCommand(authToken);
+            command.setCommandType(joinType);
+            command.setGameID(request.gameID());
+            command.setPlayerColor(request.playerColor());
+            websocketCommunicator.send(new Gson().toJson(command, UserGameCommand.class));
         }
-        return null;
+        return joinResult;
     }
 
-    public RegisterResult register(RegisterRequest request) {
-        try {
-            var http = createURLConnection("/user", "POST", request, null);
-            http.connect();
-            return readResponse(http, RegisterResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
+    public void makeMove(ChessMove move, Integer gameID, String authToken) throws Exception {
+        verifyWebsocketExists();
+        var command = new UserGameCommand(authToken);
+        command.setCommandType(UserGameCommand.CommandType.MAKE_MOVE);
+        command.setChessMove(move);
+        command.setGameID(gameID);
+        websocketCommunicator.send(gameAdapter.toJson(command, UserGameCommand.class));
     }
 
-    public LoginResult login(LoginRequest request) {
-        try {
-            var http = createURLConnection("/session", "POST", request, null);
-            http.connect();
-            return readResponse(http, LoginResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
+    public void leave(String authToken, Integer gameID) throws Exception {
+        verifyWebsocketExists();
+        var command = new UserGameCommand(authToken);
+        command.setCommandType(UserGameCommand.CommandType.LEAVE);
+        command.setGameID(gameID);
+        websocketCommunicator.send(new Gson().toJson(command, UserGameCommand.class));
+        websocketCommunicator.close();
     }
 
-    public LogoutResult logout(LogoutRequest request) {
-        try {
-            var http = createURLConnection("/session", "DELETE", null, request.authToken());
-            http.connect();
-            return readResponse(http, LogoutResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
+    public void resign(String authToken, Integer gameID) throws Exception {
+        verifyWebsocketExists();
+        var command = new UserGameCommand(authToken);
+        command.setCommandType(UserGameCommand.CommandType.RESIGN);
+        command.setGameID(gameID);
+        websocketCommunicator.send(new Gson().toJson(command, UserGameCommand.class));
+        websocketCommunicator.close();
     }
 
-    public ListGamesResult listGames(String authToken) {
-        try {
-            var http = createURLConnection("/game", "GET", null, authToken);
-            http.connect();
-            return readResponse(http, ListGamesResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
-    }
-
-    public CreateGameResult createGame(CreateGameRequest request, String authToken) {
-        try {
-            var http = createURLConnection("/game", "POST", request, authToken);
-            http.connect();
-            return readResponse(http, CreateGameResult.class);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
-    }
-
-    public JoinGameResult joinGame(JoinGameRequest request, String authToken) {
-        try {
-            var http = createURLConnection("/game", "PUT", request, authToken);
-            http.connect();
-
-            responseCode = http.getResponseCode();
-
-            if (responseCode == 200) {
-                try (InputStream respBody = http.getInputStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return gameAdapter.fromJson(inputStreamReader, JoinGameResult.class);
-                }
-            } else {
-                try (InputStream respBody = http.getErrorStream()) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                    return gameAdapter.fromJson(inputStreamReader, JoinGameResult.class);
-                }
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-        return null;
-    }
-
-    private <T> HttpURLConnection createURLConnection(String postfix, String requestMethod,
-                                                      T request, String authToken) throws Exception {
-        URI uri = new URI("http://" + address + ":" + port + postfix);
-        HttpURLConnection http = (HttpURLConnection) uri.toURL().openConnection();
-        http.setRequestMethod(requestMethod);
-
-        if (authToken != null)
-            http.setRequestProperty("authorization", authToken);
-
-        if (request != null) {
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
-            try (var outputStream = http.getOutputStream()) {
-                var jsonBody = new Gson().toJson(request);
-                outputStream.write(jsonBody.getBytes());
-            }
-        }
-
-        return http;
-    }
-
-    private <T> T readResponse(HttpURLConnection http, Class<T> resultClass) throws Exception {
-        responseCode = http.getResponseCode();
-
-        if (responseCode == 200) {
-            try (InputStream respBody = http.getInputStream()) {
-                InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                return new Gson().fromJson(inputStreamReader, resultClass);
-            }
-        } else {
-            try (InputStream respBody = http.getErrorStream()) {
-                InputStreamReader inputStreamReader = new InputStreamReader(respBody);
-                return new Gson().fromJson(inputStreamReader, resultClass);
-            }
+    private void verifyWebsocketExists() throws Exception {
+        if (websocketCommunicator == null) {
+            throw new Exception("Error: No websocket session");
         }
     }
-
 }

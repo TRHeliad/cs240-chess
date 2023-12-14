@@ -65,7 +65,8 @@ public class MemoryDataAccess implements DataAccess{
                 game.whiteUsername(),
                 game.blackUsername(),
                 game.gameName(),
-                game.game()
+                game.game(),
+                false
         ));
         return gameID;
     }
@@ -98,7 +99,8 @@ public class MemoryDataAccess implements DataAccess{
                 userColor == ChessGame.TeamColor.WHITE ? user.username() : oldGame.whiteUsername(),
                 userColor == ChessGame.TeamColor.BLACK ? user.username() : oldGame.blackUsername(),
                 oldGame.gameName(),
-                oldGame.game()
+                oldGame.game(),
+                oldGame.gameOver()
         ));
     }
 

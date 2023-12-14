@@ -64,7 +64,7 @@ public class TestFactory {
     //Server Database
     //------------------------------------------------------------------------------------------------------------------
     public static Game createSimpleGame() {
-        return new Game(0, "jeff", "max", "testGame", getNewGame());
+        return new Game(0, "jeff", "max", "testGame", getNewGame(), false);
     }
     public static AuthToken createSimpleAuthToken() {
         var user = createSimpleUser();

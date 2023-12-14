@@ -6,6 +6,7 @@ import dataAccess.SQLDataAccess;
 import handler.ApplicationHandler;
 import handler.GameHandler;
 import handler.UserHandler;
+import server.websocket.WebSocketHandler;
 import service.ApplicationService;
 import service.GameService;
 import service.UserService;
@@ -14,6 +15,7 @@ import spark.*;
 import java.util.Map;
 
 public class Server {
+    private WebSocketHandler webSocketHandler;
     public static void main(String[] args) {
         new Server().run();
     }
@@ -23,12 +25,15 @@ public class Server {
         // init data
         UserService.getInstance().init(dataAccess);
         GameService.getInstance().init(dataAccess);
-        ApplicationService.getInstance().init(dataAccess);
+        webSocketHandler = new WebSocketHandler(dataAccess);
+        ApplicationService.getInstance().init(dataAccess, webSocketHandler);
 
         // Setup spark server
         Spark.port(8080);
 
         Spark.externalStaticFileLocation("web");
+
+        Spark.webSocket("/connect", webSocketHandler);
 
         Spark.delete("/db", ApplicationHandler.getInstance()::handleClear);
 
@@ -40,7 +45,6 @@ public class Server {
         Spark.post("/game", GameHandler.getInstance()::handleCreateGame);
         Spark.put("/game", GameHandler.getInstance()::handleJoinGame);
 
-        //Spark.exception(Exception.class, this::errorHandler);
         Spark.notFound((req, res) -> {
             var msg = String.format("[%s] %s not found", req.requestMethod(), req.pathInfo());
             return errorHandler(new Exception(msg), req, res);

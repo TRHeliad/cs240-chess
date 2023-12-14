@@ -11,4 +11,4 @@ import chess.ChessGame;
  * @param game The `ChessGame` object
  */
 public record Game(Integer gameID, String whiteUsername, String blackUsername,
-                   String gameName, ChessGame game) { }
+                   String gameName, ChessGame game, boolean gameOver) { }

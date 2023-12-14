@@ -25,7 +25,7 @@ public class ChessPositionImpl implements ChessPosition {
 
     @Override
     public String toString() {
-        return ""+(char)(row-1+'a') + column;
+        return ""+(char)(column-1+'a') + row;
     }
 
     @Override

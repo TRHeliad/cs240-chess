@@ -90,6 +90,7 @@ public class Database {
                     black_username VARCHAR(255),
                     game_name VARCHAR(255) NOT NULL,
                     chess_game longtext NOT NULL,
+                    game_over BOOLEAN NOT NULL,
                     PRIMARY KEY (id)
                 )""";
 

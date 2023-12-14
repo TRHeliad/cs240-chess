@@ -141,13 +141,14 @@ public class SQLDataAccess implements DataAccess{
         if (game.game() == null)
             throw new DataAccessException("game was null");
         try(var connection = database.getConnection()) {
-            var insertString = "INSERT INTO game (white_username, black_username, game_name, chess_game) VALUES(?, ?, ?, ?)";
+            var insertString = "INSERT INTO game (white_username, black_username, game_name, chess_game, game_over) VALUES(?, ?, ?, ?, ?)";
             var insertStatement = connection.prepareStatement(insertString, Statement.RETURN_GENERATED_KEYS);
             insertStatement.setString(1, game.whiteUsername());
             insertStatement.setString(2, game.blackUsername());
             insertStatement.setString(3, game.gameName());
             var gameJSON = gameAdapter.toJson(game.game());
             insertStatement.setString(4, gameJSON);
+            insertStatement.setBoolean(5, game.gameOver());
             insertStatement.executeUpdate();
 
             var resultSet = insertStatement.getGeneratedKeys();
@@ -180,7 +181,7 @@ public class SQLDataAccess implements DataAccess{
             if (!gameExists(game.gameID()))
                 throw new DataAccessException("bad request");
 
-            var statement = "UPDATE game SET white_username=?, black_username=?, game_name=?, chess_game=? WHERE id=?";
+            var statement = "UPDATE game SET white_username=?, black_username=?, game_name=?, chess_game=?, game_over=? WHERE id=?";
             var preparedStatement = connection.prepareStatement(statement);
 
             preparedStatement.setString(1, game.whiteUsername());
@@ -190,6 +191,7 @@ public class SQLDataAccess implements DataAccess{
             preparedStatement.setString(4, gameJSON);
 
             preparedStatement.setInt(5, game.gameID());
+            preparedStatement.setBoolean(6, game.gameOver());
             preparedStatement.executeUpdate();
         } catch (SQLException exception) {
             throw new DataAccessException(exception.getMessage());
@@ -209,7 +211,8 @@ public class SQLDataAccess implements DataAccess{
                         rs.getString("white_username"),
                         rs.getString("black_username"),
                         rs.getString("game_name"),
-                        null
+                        null,
+                        false
                 );
                 games.add(game);
             }
@@ -233,7 +236,8 @@ public class SQLDataAccess implements DataAccess{
                         rs.getString("white_username"),
                         rs.getString("black_username"),
                         rs.getString("game_name"),
-                        gameAdapter.fromJson(rs.getString("chess_game"), ChessGameImpl.class)
+                        gameAdapter.fromJson(rs.getString("chess_game"), ChessGameImpl.class),
+                        rs.getBoolean("game_over")
                 );
             }
         } catch (SQLException exception) {

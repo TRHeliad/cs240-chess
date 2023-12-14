@@ -5,6 +5,7 @@ import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
 import org.junit.jupiter.api.*;
 import passoffTests.TestFactory;
+import server.websocket.WebSocketHandler;
 import service.ApplicationService;
 import service.GameService;
 import service.UserService;
@@ -18,9 +19,10 @@ public class ServiceTests {
 
     @BeforeAll
     public static void init() {
+        WebSocketHandler webSocketHandler = new WebSocketHandler(dataAccess);
         userService.init(dataAccess);
         gameService.init(dataAccess);
-        applicationService.init(dataAccess);
+        applicationService.init(dataAccess, webSocketHandler);
     }
     @BeforeEach
     public void setup() { applicationService.clearApplication(); }

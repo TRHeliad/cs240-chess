@@ -171,7 +171,7 @@ public class DatabaseTests {
     @Test
     public void createGameWithoutName() {
         try {
-            Game game = new Game(0, null, null, null, TestFactory.getNewGame());
+            Game game = new Game(0, null, null, null, TestFactory.getNewGame(), false);
             dataAccess.createGame(game);
             Assertions.fail("Didn't throw error");
         } catch (DataAccessException exception) {
@@ -190,7 +190,8 @@ public class DatabaseTests {
                     "newUsername",
                     game.blackUsername(),
                     game.gameName(),
-                    game.game()
+                    game.game(),
+                    game.gameOver()
             );
             dataAccess.updateGame(updatedGame);
             var resultGame = dataAccess.getGame(gameID);
@@ -242,7 +243,7 @@ public class DatabaseTests {
             Game game = TestFactory.createSimpleGame();
             var gameID = dataAccess.createGame(game);
             dataAccess.createUser(user);
-            var idGame = new Game(gameID, null, null, game.gameName(), game.game());
+            var idGame = new Game(gameID, null, null, game.gameName(), game.game(), game.gameOver());
             dataAccess.joinGame(user, ChessGame.TeamColor.BLACK, idGame);
             var gameResult = dataAccess.getGame(gameID);
             Assertions.assertEquals(gameResult.blackUsername(), user.username());

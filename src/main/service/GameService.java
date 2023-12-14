@@ -57,7 +57,7 @@ public class GameService {
                 var board = new ChessBoardImpl();
                 board.resetBoard();
                 chessGame.setBoard(board);
-                var game = new Game(0, null, null, request.gameName(), chessGame);
+                var game = new Game(0, null, null, request.gameName(), chessGame, false);
                 var gameID = dataAccess.createGame(game);
                 return new CreateGameResult(gameID, null, true);
             } else {
@@ -102,7 +102,8 @@ public class GameService {
                                     isWhite ? username : game.whiteUsername(),
                                     !isWhite ? username : game.blackUsername(),
                                     game.gameName(),
-                                    game.game()
+                                    game.game(),
+                                    game.gameOver()
                             ));
                             return new JoinGameResult(null, true, game);
                         } else
